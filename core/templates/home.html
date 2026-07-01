@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Participatory Land Use Planning Portal</title>
+    <form method="GET" class="mb-4">
+
+        <div class="input-group">
+
+            <input
+                type="text"
+                name="search"
+                class="form-control"
+                placeholder="Search land use plans..."
+            >
+
+            <button class="btn btn-dark">
+                Search
+            </button>
+
+        </div>
+
+    </form>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet/dist/leaflet.css"
+    />
+
+    <script
+        src="https://unpkg.com/leaflet/dist/leaflet.js">
+    </script>
+</head>
+
+<body class="bg-light">
+
+<div class="container mt-4">
+
+    <div class="mb-3 text-end">
+
+        <h5>
+
+            Welcome,
+            <strong>{{ request.user.username }}</strong>
+
+            {% if request.user.is_superuser %}
+
+                (Admin)
+
+            {% elif request.user.groups.all.0.name == 'PlanningOfficer' %}
+
+                (Planning Officer)
+
+            {% else %}
+
+                (Citizen)
+
+            {% endif %}
+
+        </h5>
+        {% if is_officer %}
+
+        <a href="/dashboard/" class="btn btn-dark btn-sm">
+            Dashboard
+        </a>
+
+        <a href="/add-plan/" class="btn btn-success btn-sm">
+            Add Plan
+        </a>
+
+        <a href="/manage-plans/"
+            class="btn btn-warning btn-sm">
+
+            Manage Plans
+
+        </a>
+
+        {% endif %}
+        
+        <a href="/logout/" class="btn btn-danger btn-sm">
+            Logout
+        </a>
+    </div>
+    
+
+    <div class="text-center mb-4">
+        <h1 class="fw-bold">Participatory Land Use Planning Portal</h1>
+        <p class="text-muted">
+            Citizens can review land use plans and provide feedback
+        </p>
+    </div>
+<div class="card mb-4">
+
+    <div class="card-body">
+
+        <h3 class="mb-3">
+            Land Use Planning Map
+        </h3>
+
+        <div
+            id="map"
+            style="height: 400px;"
+        ></div>
+
+    </div>
+
+</div>
+    {% for plan in plans %}
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+
+            <h3>{{ plan.title }}</h3>
+
+            <p>
+
+                <strong>Status:</strong>
+
+                {% if plan.status == "Open" %}
+
+                <span class="badge bg-success">
+                    Open
+                </span>
+
+                {% elif plan.status == "Closed" %}
+
+                <span class="badge bg-danger">
+                    Closed
+                </span>
+
+                {% else %}
+
+                <span class="badge bg-secondary">
+                    Draft
+                </span>
+
+                {% endif %}
+
+            </p>
+
+            {% if plan.image %}
+
+                <img
+                    src="{{ plan.image.url }}"
+                    class="img-fluid rounded mb-3"
+                >
+
+            {% endif %}
+
+
+            <p>{{ plan.description }}</p>
+
+            <p>
+                <strong>Location:</strong>
+                {{ plan.location }}
+            </p>
+
+            <hr>
+
+            <h5>Citizen Comments</h5>
+
+            {% for comment in plan.comment_set.all %}
+                <div class="alert alert-secondary">
+                    <strong>{{ comment.user.username }}</strong>:
+                    {{ comment.text }}
+                </div>
+            {% empty %}
+                <p>No comments yet</p>
+            {% endfor %}
+
+            {% if plan.status == "Open" %}
+
+            <form method="POST" class="mt-3">
+
+                {% csrf_token %}
+
+                <input type="hidden" name="plan_id" value="{{ plan.id }}">
+
+                <input
+                    type="text"
+                    name="text"
+                    class="form-control mb-2"
+                    placeholder="Write your opinion..."
+                    required
+                >
+
+                <button class="btn btn-primary">
+                    Submit Comment
+                </button>
+
+            </form>
+
+            {% else %}
+
+            <div class="alert alert-warning mt-3">
+
+                <strong>Comments are disabled.</strong><br>
+
+                This consultation is {{ plan.status }}.
+
+            </div>
+
+            {% endif %}
+<hr>
+
+{% if plan.status == "Open" %}
+
+<h5>Vote on this Plan</h5>
+
+<form method="POST">
+
+    {% csrf_token %}
+
+    <input type="hidden" name="plan_id" value="{{ plan.id }}">
+
+    <button
+        type="submit"
+        name="vote"
+        value="Approve"
+        class="btn btn-success btn-sm">
+        Approve
+    </button>
+
+    <button
+        type="submit"
+        name="vote"
+        value="Reject"
+        class="btn btn-danger btn-sm">
+        Reject
+    </button>
+
+</form>
+
+<p class="mt-2 text-success">
+    👍 Approvals: {{ plan.approvals }}
+</p>
+
+<p class="text-danger">
+    👎 Rejects: {{ plan.rejects }}
+</p>
+
+{% else %}
+
+<div class="alert alert-secondary">
+
+    Voting is disabled because this consultation is {{ plan.status }}.
+
+</div>
+
+{% endif %}
+
+
+        </div>
+    </div>
+
+    {% endfor %}
+
+</div>
+<script>
+
+    // create map
+    var map = L.map('map').setView(
+        [-6.7924, 39.2083],
+        11
+    );
+
+    // map layer
+    L.tileLayer(
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        {
+            attribution: 'OpenStreetMap'
+        }
+    ).addTo(map);
+
+    {% for plan in plans %}
+
+        L.marker([
+            {{ plan.latitude }},
+            {{ plan.longitude }}
+        ])
+
+        .addTo(map)
+
+        .bindPopup(`
+            <b>{{ plan.title }}</b><br>
+            {{ plan.location }}
+        `);
+
+    {% endfor %}
+
+</script>
+{% endblock %}
+</body>
+</html>
