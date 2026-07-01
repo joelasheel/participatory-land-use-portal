@@ -10,6 +10,7 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect
 from .models import LandUsePlan # change Plan to your actual model name
+from django.contrib import messages
 # HOME PAGE
 def home(request):
 
@@ -161,6 +162,13 @@ def login_view(request):
             login(request, user)
 
             return redirect('/')
+
+        else:
+
+            messages.error(
+                request,
+                "Invalid username or password."
+            )
 
     return render(request, 'login.html')
 
