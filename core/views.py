@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect
 from .models import LandUsePlan # change Plan to your actual model name
 from django.contrib import messages
+from django.shortcuts import get_object_or_404
 # HOME PAGE
 def home(request):
 
@@ -370,3 +371,36 @@ def delete_plan(request, plan_id):
     plan = get_object_or_404(LandUsePlan, id=plan_id)
     plan.delete()
     return redirect('/manage-plans/')
+
+def plan_details(request, plan_id):
+
+    plan = get_object_or_404(
+        LandUsePlan,
+        id=plan_id
+    )
+
+    plan.approvals = Vote.objects.filter(
+        plan=plan,
+        choice="Approve"
+    ).count()
+
+    plan.rejects = Vote.objects.filter(
+        plan=plan,
+        choice="Reject"
+    ).count()
+
+    is_officer = (
+        request.user.is_superuser
+        or request.user.groups.filter(
+            name="PlanningOfficer"
+        ).exists()
+    )
+
+    return render(
+        request,
+        "plan_details.html",
+        {
+            "plan": plan,
+            "is_officer": is_officer
+        }
+    )

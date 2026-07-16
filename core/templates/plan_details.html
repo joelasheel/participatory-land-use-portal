@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <a href="/" class="btn btn-secondary mb-3">
+        ← Back to Home
+    </a>
+
+    <div class="card shadow">
+
+        {% if plan.image %}
+        <img src="{{ plan.image.url }}"
+             class="card-img-top">
+        {% endif %}
+
+        <div class="card-body">
+
+            <h2>{{ plan.title }}</h2>
+
+            <p>
+
+                <strong>Status:</strong>
+
+                {% if plan.status == "Open" %}
+
+                    <span class="badge bg-success">
+                        Open
+                    </span>
+
+                {% elif plan.status == "Closed" %}
+
+                    <span class="badge bg-danger">
+                        Closed
+                    </span>
+
+                {% else %}
+
+                    <span class="badge bg-secondary">
+                        Draft
+                    </span>
+
+                {% endif %}
+
+            </p>
+
+            <hr>
+
+            <p>
+
+                <strong>Description</strong>
+
+            </p>
+
+            <p>
+
+                {{ plan.description }}
+
+            </p>
+
+            <p>
+
+                <strong>Location:</strong>
+
+                {{ plan.location }}
+
+            </p>
+
+            <hr>
+
+            <h4>Comments</h4>
+
+            {% for comment in plan.comment_set.all %}
+
+                <div class="alert alert-light">
+
+                    <strong>{{ comment.user.username }}</strong><br>
+
+                    {{ comment.text }}
+
+                </div>
+
+            {% empty %}
+
+                <p>No comments yet.</p>
+
+            {% endfor %}
+
+            <hr>
+
+            {% if plan.status == "Open" %}
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+                <input
+                    type="hidden"
+                    name="plan_id"
+                    value="{{ plan.id }}">
+
+                <input
+                    type="text"
+                    name="text"
+                    class="form-control mb-3"
+                    placeholder="Write your opinion..."
+                    required>
+
+                <button
+                    class="btn btn-primary">
+
+                    Submit Comment
+
+                </button>
+
+            </form>
+
+            {% else %}
+
+            <div class="alert alert-warning">
+
+                Comments are disabled.
+
+            </div>
+
+            {% endif %}
+
+            <hr>
+
+            {% if plan.status == "Open" %}
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+                <input
+                    type="hidden"
+                    name="plan_id"
+                    value="{{ plan.id }}">
+
+                <button
+                    class="btn btn-success"
+                    name="vote"
+                    value="Approve">
+
+                    Approve
+
+                </button>
+
+                <button
+                    class="btn btn-danger"
+                    name="vote"
+                    value="Reject">
+
+                    Reject
+
+                </button>
+
+            </form>
+
+            {% else %}
+
+            <div class="alert alert-secondary">
+
+                Voting is disabled.
+
+            </div>
+
+            {% endif %}
+
+            <hr>
+
+            <h5 class="text-success">
+
+                👍 Approvals: {{ plan.approvals }}
+
+            </h5>
+
+            <h5 class="text-danger">
+
+                👎 Rejects: {{ plan.rejects }}
+
+            </h5>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

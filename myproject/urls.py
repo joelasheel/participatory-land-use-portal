@@ -24,7 +24,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from core.views import add_plan
 from core.views import manage_plans
-from core.views import edit_plan
+from core.views import edit_plan, plan_details
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -38,6 +38,7 @@ urlpatterns = [
     path('manage-plans/', manage_plans),
     path('edit-plan/<int:plan_id>/', edit_plan),
     path('delete-plan/<int:plan_id>/', delete_plan),
+    path('plan/<int:plan_id>/', plan_details),
 ]
 urlpatterns += static(
     settings.MEDIA_URL,
